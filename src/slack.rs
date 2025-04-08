@@ -5,16 +5,19 @@ use reqwest::header::HeaderMap;
 use reqwest::{header, multipart, Client, IntoUrl};
 use serde::{Serialize, Serializer};
 use std::borrow::Cow;
+use std::fmt::Display;
 
 pub struct Slack {
     client: Client,
     token: String,
     headers: HeaderMap,
+    base_url: String,
 }
 impl Slack {
     pub fn new() -> Self {
         // Load env variables from .env
         dotenv().ok();
+        let workspace = std::env::var("SLACK_WORKSPACE").expect("SLACK_WORKSPACE not set");
         let token = std::env::var("SLACK_TOKEN").expect("SLACK_TOKEN not set");
         let cookie = std::env::var("SLACK_COOKIE").expect("SLACK_COOKIE not set");
         // Set up client
@@ -30,12 +33,13 @@ impl Slack {
             client,
             token,
             headers,
+            base_url: format!("https://{workspace}.slack.com/")
         }
     }
 
     async fn request(
         &self,
-        url: impl IntoUrl,
+        url: impl Display,
         title: impl Into<Cow<'static, str>>,
         body: &impl Serialize,
     ) -> anyhow::Result<String> {
@@ -46,7 +50,7 @@ impl Slack {
 
         let response = self
             .client
-            .post(url)
+            .post(format!("{}{}", self.base_url, url))
             .headers(self.headers.clone())
             .multipart(form)
             .send()
@@ -58,7 +62,7 @@ impl Slack {
 
     pub async fn set_notification_schedule(&self, schedule: &UserPrefs) -> anyhow::Result<String> {
         self.request(
-            "https://vcampusk.slack.com/api/users.prefs.set",
+            "api/users.prefs.set",
             "prefs",
             schedule,
         )
@@ -67,7 +71,7 @@ impl Slack {
 
     pub async fn set_status(&self, status: &UserProfile) -> anyhow::Result<String> {
         self.request(
-            "https://vcampusk.slack.com/api/users.profile.set",
+            "api/users.profile.set",
             "profile",
             status,
         )

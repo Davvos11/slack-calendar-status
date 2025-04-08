@@ -1,4 +1,5 @@
 use anyhow::Context;
+use chrono::{NaiveTime, Timelike, Weekday};
 use dotenv::dotenv;
 use reqwest::header::HeaderMap;
 use reqwest::{header, multipart, Client};
@@ -86,39 +87,39 @@ impl UserPrefs {
         }
     }
 
-    pub fn set_day(mut self, day: Day, from: Time, to: Time) -> Self {
+    pub fn set_day(&mut self, day: Weekday, from: Time, to: Time) -> &mut UserPrefs {
         match day {
-            Day::Monday => {
+            Weekday::Mon => {
                 self.dnd_enabled_monday = DndEnabled::Partial;
                 self.dnd_before_monday = Some(from);
                 self.dnd_after_monday = Some(to);
             }
-            Day::Tuesday => {
+            Weekday::Tue => {
                 self.dnd_enabled_tuesday = DndEnabled::Partial;
                 self.dnd_before_tuesday = Some(from);
                 self.dnd_after_tuesday = Some(to);
             }
-            Day::Wednesday => {
+            Weekday::Wed => {
                 self.dnd_enabled_wednesday = DndEnabled::Partial;
                 self.dnd_before_wednesday = Some(from);
                 self.dnd_after_wednesday = Some(to);
             }
-            Day::Thursday => {
+            Weekday::Thu => {
                 self.dnd_enabled_thursday = DndEnabled::Partial;
                 self.dnd_before_thursday = Some(from);
                 self.dnd_after_thursday = Some(to);
             }
-            Day::Friday => {
+            Weekday::Fri => {
                 self.dnd_enabled_friday = DndEnabled::Partial;
                 self.dnd_before_friday = Some(from);
                 self.dnd_after_friday = Some(to);
             }
-            Day::Saturday => {
+            Weekday::Sat => {
                 self.dnd_enabled_saturday = DndEnabled::Partial;
                 self.dnd_before_saturday = Some(from);
                 self.dnd_after_saturday = Some(to);
             }
-            Day::Sunday => {
+            Weekday::Sun => {
                 self.dnd_enabled_sunday = DndEnabled::Partial;
                 self.dnd_before_sunday = Some(from);
                 self.dnd_after_sunday = Some(to);
@@ -126,16 +127,6 @@ impl UserPrefs {
         }
         self
     }
-}
-
-pub enum Day {
-    Monday,
-    Tuesday,
-    Wednesday,
-    Thursday,
-    Friday,
-    Saturday,
-    Sunday,
 }
 
 #[derive(Serialize, Default)]
@@ -159,6 +150,15 @@ enum DndEnabled {
 pub struct Time {
     pub hours: u8,
     pub minutes: u8,
+}
+
+impl Into<Time> for NaiveTime {
+    fn into(self) -> Time {
+        Time {
+            hours: self.hour() as u8,
+            minutes: self.minute() as u8,
+        }
+    }
 }
 
 impl Serialize for Time {

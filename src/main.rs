@@ -1,7 +1,6 @@
 use crate::ical::get_events;
 use crate::slack::{Slack, UserPrefs, UserProfile};
-use chrono::{Datelike, Local, TimeZone, Utc};
-use std::process::exit;
+use chrono::{Datelike, Local, TimeZone};
 use dotenv::dotenv;
 
 mod ical;
@@ -12,7 +11,7 @@ async fn main() -> anyhow::Result<()> {
     // Load env variables from .env
     dotenv().ok();
     let work_event = dotenv::var("WORK_EVENT").expect("WORK_EVENT not set");
-    
+
     // Load events
     let events = get_events().await?;
 
@@ -20,7 +19,7 @@ async fn main() -> anyhow::Result<()> {
     let now = Local::now();
     let mut next = None;
     let mut current = false;
-    
+
     // Filter and process events
     for event in events {
         if event.name != work_event {
@@ -30,7 +29,10 @@ async fn main() -> anyhow::Result<()> {
         let end = event.time + event.length;
         for date in &event.dates {
             prefs.set_day(date.weekday(), event.time.into(), end.into());
-            if let Some(datetime) = Local.from_local_datetime(&date.and_time(event.time)).single() {
+            if let Some(datetime) = Local
+                .from_local_datetime(&date.and_time(event.time))
+                .single()
+            {
                 if datetime > now && (next.is_none() || datetime < next.unwrap()) {
                     next = Some(datetime);
                 }

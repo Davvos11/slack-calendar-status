@@ -2,7 +2,7 @@ use anyhow::Context;
 use chrono::{DateTime, Local, NaiveTime, Timelike, Weekday};
 use dotenv::dotenv;
 use reqwest::header::HeaderMap;
-use reqwest::{header, multipart, Client, IntoUrl};
+use reqwest::{header, multipart, Client};
 use serde::{Serialize, Serializer};
 use std::borrow::Cow;
 use std::fmt::Display;
@@ -33,7 +33,7 @@ impl Slack {
             client,
             token,
             headers,
-            base_url: format!("https://{workspace}.slack.com/")
+            base_url: format!("https://{workspace}.slack.com/"),
         }
     }
 
@@ -61,21 +61,12 @@ impl Slack {
     }
 
     pub async fn set_notification_schedule(&self, schedule: &UserPrefs) -> anyhow::Result<String> {
-        self.request(
-            "api/users.prefs.set",
-            "prefs",
-            schedule,
-        )
-        .await
+        self.request("api/users.prefs.set", "prefs", schedule).await
     }
 
     pub async fn set_status(&self, status: &UserProfile) -> anyhow::Result<String> {
-        self.request(
-            "api/users.profile.set",
-            "profile",
-            status,
-        )
-        .await
+        self.request("api/users.profile.set", "profile", status)
+            .await
     }
 }
 
@@ -182,6 +173,7 @@ impl UserProfile {
 }
 #[derive(Serialize, Default)]
 #[serde(rename_all = "snake_case")]
+#[allow(dead_code)]
 enum DndDays {
     EveryDay,
     Weekdays,

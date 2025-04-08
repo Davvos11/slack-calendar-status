@@ -1,9 +1,10 @@
 use anyhow::Context;
-use chrono::{NaiveTime, Timelike, Weekday};
+use chrono::{DateTime, Local, NaiveTime, Timelike, Weekday};
 use dotenv::dotenv;
 use reqwest::header::HeaderMap;
-use reqwest::{header, multipart, Client};
+use reqwest::{header, multipart, Client, IntoUrl};
 use serde::{Serialize, Serializer};
+use std::borrow::Cow;
 
 pub struct Slack {
     client: Client,
@@ -32,12 +33,16 @@ impl Slack {
         }
     }
 
-    pub async fn set_notification_schedule(&self, schedule: &UserPrefs) -> anyhow::Result<String> {
-        let body = serde_json::to_string(schedule)?;
+    async fn request(
+        &self,
+        url: impl IntoUrl,
+        title: impl Into<Cow<'static, str>>,
+        body: &impl Serialize,
+    ) -> anyhow::Result<String> {
+        let body = serde_json::to_string(body)?;
         let form = multipart::Form::new()
             .text("token", self.token.clone())
-            .text("prefs", body);
-        let url = "https://vcampusk.slack.com/api/users.prefs.set";
+            .text(title, body);
 
         let response = self
             .client
@@ -49,6 +54,24 @@ impl Slack {
             .context("Could not set notification schedule")?;
         let result = response.text().await.context("Could not parse response")?;
         Ok(result)
+    }
+
+    pub async fn set_notification_schedule(&self, schedule: &UserPrefs) -> anyhow::Result<String> {
+        self.request(
+            "https://vcampusk.slack.com/api/users.prefs.set",
+            "prefs",
+            schedule,
+        )
+        .await
+    }
+
+    pub async fn set_status(&self, status: &UserProfile) -> anyhow::Result<String> {
+        self.request(
+            "https://vcampusk.slack.com/api/users.profile.set",
+            "profile",
+            status,
+        )
+        .await
     }
 }
 
@@ -129,6 +152,30 @@ impl UserPrefs {
     }
 }
 
+#[derive(Serialize)]
+pub struct UserProfile {
+    status_emoji: String,
+    status_expiration: u64,
+    status_text: String,
+}
+
+impl UserProfile {
+    pub fn out_of_office(until: DateTime<Local>) -> Self {
+        Self {
+            status_emoji: String::from(":no_entry:"),
+            status_expiration: until.timestamp() as u64,
+            status_text: String::from("Out of office"),
+        }
+    }
+
+    pub fn in_office() -> Self {
+        Self {
+            status_emoji: String::new(),
+            status_expiration: 0,
+            status_text: String::new(),
+        }
+    }
+}
 #[derive(Serialize, Default)]
 #[serde(rename_all = "snake_case")]
 enum DndDays {

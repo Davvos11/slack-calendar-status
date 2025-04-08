@@ -33,3 +33,14 @@ You can also use `cargo build --release` to create an executable to use in e.g. 
 
 ## Example:
 
+Calendar has the following events with the title "Werk" (i.e. `WORK_EVENT` setting)
+
+![Screenshot_20250408_190140](https://github.com/user-attachments/assets/0b515782-c00b-46c7-8005-609e7e36d20b)
+
+After running, Slack notification schedule is set to:
+
+![Screenshot_20250408_190213](https://github.com/user-attachments/assets/0334b7e9-6c54-49c4-ad9b-6ebb15ce378f)
+
+And my Slack status is set to:
+
+![Screenshot_20250408_190225](https://github.com/user-attachments/assets/7ee4d441-7998-4bb3-a253-ca757beea33e)
